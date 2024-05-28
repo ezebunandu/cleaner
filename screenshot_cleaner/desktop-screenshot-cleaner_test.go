@@ -1,4 +1,4 @@
-package main
+package screenshot_cleaner
 
 import (
 	"os"
