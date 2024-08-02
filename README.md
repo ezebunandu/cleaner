@@ -1,2 +1,3 @@
 # ScreenShot Cleaner
-## Clean Screenshots from MacOS Desktop Folder
+
+A simple command line tool to clean up screenshots from MacOS desktop
