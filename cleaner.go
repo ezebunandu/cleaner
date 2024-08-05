@@ -19,3 +19,10 @@ func ListScreenshots(dir string) ([]string, error) {
 	}
 	return results, nil
 }
+
+func MoveScreenshots(screenshots []string, targetDir string) error {
+	// if screenshots is emtpy, then return an error
+	// if targetDir does not exist, create it first but don't return an error
+	// if any of the screenshots files are already in the target, then do nothing -- don't return an error
+	return nil
+}

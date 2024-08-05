@@ -5,6 +5,7 @@ package cleaner_test
 // copy files
 
 import (
+	"os"
 	"slices"
 	"testing"
 
@@ -31,7 +32,56 @@ func TestListFiles_ReturnsErrorWhenDirNotReadable(t *testing.T) {
 	}
 }
 
-func TestMoveScrenshot_MovesScreenshotsToTargetDir(t *testing.T) {
+func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	t.Parallel()
-	t.Fail()
+	target := t.TempDir()
+	source := t.TempDir()
+	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	sourcePath := source + "/" + screenshotFile
+	s, err := cleaner.ListScreenshots(target) 
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s)!= 0 {
+		for _, v := range s {
+			if v == screenshotFile {
+				t.Fatal("screenshot file already in target")
+			}
+		}
+	}
+	err = cleaner.MoveScreenshots([]string{sourcePath}, target)
+	if err!= nil {
+		t.Fatal(err)
+	}
+	destPath := target + "/" + screenshotFile
+	want := []string{destPath}
+	got, _ := cleaner.ListScreenshots(target)
+	if!slices.Equal(want, got) {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
+	t.Parallel()
+	target := t.TempDir()
+	source := t.TempDir()
+	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	sourcePath := source + "/" + screenshotFile
+	file, err := os.Create(sourcePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	err = cleaner.MoveScreenshots([]string{sourcePath}, target)
+	if err!= nil {
+		t.Fatal(err)
+	}
+	want := []string{}
+	got, err := cleaner.ListScreenshots(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(want, got) {
+		t.Errorf("want %q got %q", want, got)
+	}
 }
