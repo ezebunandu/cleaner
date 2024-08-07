@@ -2,6 +2,7 @@ package cleaner
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -20,9 +21,17 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
-func MoveScreenshots(screenshots []string, targetDir string) error {
-	// if screenshots is emtpy, then return an error
+func MoveScreenshots(screenshots []string, targetDir string) {
+	// if screenshots is emtpy, then do nothing.
 	// if targetDir does not exist, create it first but don't return an error
 	// if any of the screenshots files are already in the target, then do nothing -- don't return an error
-	return nil
+	for _, screenshot := range screenshots {
+		fileName := filepath.Base(screenshot)
+		targetPath := targetDir + "/" + fileName
+		
+		err := os.Rename(screenshot, targetPath)
+		if err!= nil {
+			continue
+		}
+	}
 }

@@ -32,27 +32,36 @@ func TestListFiles_ReturnsErrorWhenDirNotReadable(t *testing.T) {
 	}
 }
 
+// what are we really testing here?
+// after calling MoveScreenshot on a list of files
+// the files should exist in the target directory
+// and should no longer be in the source?
+// perhaps, move screenshots should also take the source directory 
+// as an argument?
 func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	t.Parallel()
 	target := t.TempDir()
 	source := t.TempDir()
 	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	sourcePath := source + "/" + screenshotFile
+	
+	f, err := os.Create(sourcePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
 	s, err := cleaner.ListScreenshots(target) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(s)!= 0 {
-		for _, v := range s {
-			if v == screenshotFile {
-				t.Fatal("screenshot file already in target")
-			}
+	// target might already exist and contain other screenshot files
+	for _, v := range s {
+		if v == screenshotFile {
+			t.Error("target already contains screenshot file")
 		}
 	}
-	err = cleaner.MoveScreenshots([]string{sourcePath}, target)
-	if err!= nil {
-		t.Fatal(err)
-	}
+	cleaner.MoveScreenshots([]string{sourcePath}, target)
 	destPath := target + "/" + screenshotFile
 	want := []string{destPath}
 	got, _ := cleaner.ListScreenshots(target)
@@ -72,7 +81,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 		t.Fatal(err)
 	}
 	defer file.Close()
-	err = cleaner.MoveScreenshots([]string{sourcePath}, target)
+	cleaner.MoveScreenshots([]string{sourcePath}, target)
 	if err!= nil {
 		t.Fatal(err)
 	}
