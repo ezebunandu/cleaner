@@ -15,6 +15,7 @@ import (
 func TestListScreenshots_CorrectlyListsScreenshotsinDirectory(t *testing.T) {
 	t.Parallel()
 	want := []string{"testdata/Screenshot 2024-07-30 at 9.55.08 AM.png"}
+
 	got, err := cleaner.ListScreenshots("testdata")
 	if err != nil {
 		t.Fatal(err)
@@ -32,41 +33,29 @@ func TestListFiles_ReturnsErrorWhenDirNotReadable(t *testing.T) {
 	}
 }
 
-// what are we really testing here?
-// after calling MoveScreenshot on a list of files
-// the files should exist in the target directory
-// and should no longer be in the source?
-// perhaps, move screenshots should also take the source directory 
-// as an argument?
 func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	t.Parallel()
 	target := t.TempDir()
-	source := t.TempDir()
-	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
-	sourcePath := source + "/" + screenshotFile
-	
-	f, err := os.Create(sourcePath)
+	file := t.TempDir() + "/" + "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	want := []byte{1, 2, 3}
+	err := os.WriteFile(file, want, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}	
+	err = cleaner.MoveScreenshot(file, target)
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
-
-	s, err := cleaner.ListScreenshots(target) 
+	destPath := target + "/" + "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+		t.Fatalf("expected file at %s but it does not exist", destPath)
+	}
+	got, err := os.ReadFile(destPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// target might already exist and contain other screenshot files
-	for _, v := range s {
-		if v == screenshotFile {
-			t.Error("target already contains screenshot file")
-		}
-	}
-	cleaner.MoveScreenshots([]string{sourcePath}, target)
-	destPath := target + "/" + screenshotFile
-	want := []string{destPath}
-	got, _ := cleaner.ListScreenshots(target)
-	if!slices.Equal(want, got) {
-		t.Errorf("want %q, got %q", want, got)
+	if ! slices.Equal(want, got) {
+		t.Error("target does not contain the data in source")
 	}
 }
 
@@ -81,7 +70,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 		t.Fatal(err)
 	}
 	defer file.Close()
-	cleaner.MoveScreenshots([]string{sourcePath}, target)
+	cleaner.MoveScreenshot(sourcePath, target)
 	if err!= nil {
 		t.Fatal(err)
 	}
