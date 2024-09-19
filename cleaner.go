@@ -23,7 +23,7 @@ func ListScreenshots(dir string) ([]string, error) {
 
 func MoveScreenshot(file, target string) error {
 	fileName := filepath.Base(file)
-	targetName := target + "/" + fileName
+	targetName := filepath.Join(target, fileName)
 	err := os.Rename(file, targetName)
 	if err != nil {
 		return err
