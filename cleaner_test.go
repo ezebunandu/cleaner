@@ -6,7 +6,6 @@ package cleaner_test
 
 import (
 	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 
