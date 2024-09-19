@@ -46,7 +46,7 @@ func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	destPath := target + "/" + "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	destPath := target + "/2024-07-30/Screenshot 2024-07-30 at 9.55.08 AM.png"
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		t.Fatalf("expected file at %s but it does not exist", destPath)
 	}
@@ -84,3 +84,12 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 	}
 }
 
+func TestDateSubfolder_ReturnsCorrectSubfolderGivenName(t *testing.T){
+	t.Parallel()
+	filename := "Screenshot 2024-07-30 at 9.55.08 AM.png"
+	want := "2024-07-30"
+	got := cleaner.DateSubfolder(filename)
+	if want != got {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}

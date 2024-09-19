@@ -21,12 +21,38 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
+// func MoveScreenshot(file, target string) error {
+// 	fileName := filepath.Base(file)
+// 	targetName := filepath.Join(target, fileName)
+// 	err := os.Rename(file, targetName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
 func MoveScreenshot(file, target string) error {
 	fileName := filepath.Base(file)
-	targetName := filepath.Join(target, fileName)
-	err := os.Rename(file, targetName)
+	dateSubfolder := DateSubfolder(fileName)
+	targetPath := filepath.Join(target, dateSubfolder)
+
+	_, err := os.Stat(targetPath)
+
+    if err != nil {
+		err := os.Mkdir(targetPath, 0700)
+		if err != nil {
+			return err
+		}
+    }
+	
+	targetName := filepath.Join(targetPath, fileName)
+	err = os.Rename(file, targetName)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func DateSubfolder(filename string) string {
+	return strings.Split(filename, " ")[1]
 }
