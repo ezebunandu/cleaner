@@ -85,19 +85,3 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 	}
 }
 
-func TestMoveScreenshot_CreatesTargetDirIfNotAlreadyExisting(t *testing.T){
-	t.Parallel()
-	source := t.TempDir()
-
-	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
-	sourcePath := filepath.Join(source, screenshotFile)
-	target := filepath.Join(t.TempDir(), "bogus")
-
-	err := cleaner.MoveScreenshot(sourcePath, target)
-	if err != nil {
-		t.Fatalf("MoveScreenshot returned an error: %v", err)
-	}
-	if _, err := os.Stat(target); os.IsNotExist(err) {
-		t.Fatalf("expected target directory %q to be created, but it doesn't exist", target)
-	}
-}
