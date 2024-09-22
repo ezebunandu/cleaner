@@ -84,7 +84,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 	}
 }
 
-func TestDateSubfolder_ReturnsCorrectSubfolderGivenName(t *testing.T){
+func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T){
 	t.Parallel()
 	filename := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	want := "2024-07-30"

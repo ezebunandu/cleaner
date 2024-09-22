@@ -4,7 +4,10 @@ import (
 	"os"
 	"strings"
 	"path/filepath"
+	"fmt"
 )
+
+const usage = `usage: cleaner <SOURCE> <TARGET>`
 
 func ListScreenshots(dir string) ([]string, error) {
 	files, err := os.ReadDir(dir)
@@ -20,16 +23,6 @@ func ListScreenshots(dir string) ([]string, error) {
 	}
 	return results, nil
 }
-
-// func MoveScreenshot(file, target string) error {
-// 	fileName := filepath.Base(file)
-// 	targetName := filepath.Join(target, fileName)
-// 	err := os.Rename(file, targetName)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 func MoveScreenshot(file, target string) error {
 	fileName := filepath.Base(file)
@@ -55,4 +48,37 @@ func MoveScreenshot(file, target string) error {
 
 func DateSubfolder(filename string) string {
 	return strings.Split(filename, " ")[1]
+}
+
+func Main(){
+	if len(os.Args) != 3 {
+        fmt.Println(usage)
+        os.Exit(0)
+    }
+    source, target := os.Args[1], os.Args[2]
+    screenshots, err := ListScreenshots(source)
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+    }
+
+    if len(screenshots) == 0 {
+        fmt.Println("no files to move")
+        os.Exit(0)
+    }
+
+    _, err = os.Stat(target)
+
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+    }
+    for _, screenshot := range screenshots{
+        err := MoveScreenshot(screenshot, target)
+        if err != nil {
+           fmt.Println(err)
+           os.Exit(1)
+        }
+    }
+    fmt.Printf("moved %d files to %s\n", len(screenshots), target)
 }
