@@ -1,11 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/ezebunandu/cleaner"
 )
 
 
 
 func main(){
-    cleaner.Main()
+    os.Exit(cleaner.Main())
 }
