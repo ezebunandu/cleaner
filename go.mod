@@ -1,3 +1,3 @@
-module github.com/ezebunandu/cleaner
+module github.com/ezebunandu/screenshot-cleaner
 
-go 1.22.5
+go 1.23.1

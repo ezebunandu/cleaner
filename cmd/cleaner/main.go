@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ezebunandu/cleaner"
+	"github.com/ezebunandu/screenshot-cleaner/cleaner"
 )
 
 
