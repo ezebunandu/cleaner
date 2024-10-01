@@ -9,6 +9,7 @@ import (
 
 const usage = `usage: cleaner <SOURCE> <TARGET>`
 
+// ListScreenshots lists screenshot files in dir.
 func ListScreenshots(dir string) ([]string, error) {
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -24,6 +25,7 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
+// MoveScreenshot moves file to target.
 func MoveScreenshot(file, target string) error {
 	fileName := filepath.Base(file)
 	dateSubfolder := DateSubfolder(fileName)
@@ -46,6 +48,7 @@ func MoveScreenshot(file, target string) error {
 	return nil
 }
 
+// DateSubfolder returns the date from filename.
 func DateSubfolder(filename string) string {
 	return strings.Split(filename, " ")[1]
 }

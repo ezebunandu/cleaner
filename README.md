@@ -1,7 +1,9 @@
 # Cleaner
 
-When you take a screenshot on MacOS, it default saves to your desktop with a naming convention like `Screenshot 2023-12-13 at 10.46.37 PM.png` screenshot-cleaner is a command line tool that takes a source directory and a target and moves all screenshot files from the source to the target.
+`cleaner` is a command line tool that takes a source directory and a target and moves all screenshot files from the source to the target.
 
-The screenshots are saved in subfolders within the target using the `date` from the filename. This can be run as a cron job to continously declutter your desktop but also make it easy for you to review screenshots from a particular date if needed.
+`go install github.com/ezebunandu/cleaner/cmd/cleaner@v0.1.2`
+
+When you take a screenshot on MacOS, it default saves to your desktop with a naming convention like `Screenshot 2023-12-13 at 10.46.37 PM.png`. The screenshots are saved in subfolders within the target using the `date` from the filename. This can be run as a cron job to continously declutter your desktop but also make it easy for you to review screenshots from a particular date if needed.
 
 ```usage: cleaner <source> <target>```

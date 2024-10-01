@@ -1,13 +1,10 @@
 package cleaner_test
 
-// get list of files in the directory
-// get the files we are interested in
-// copy files
-
 import (
 	"os"
 	"slices"
 	"testing"
+	"fmt"
 
 	"github.com/ezebunandu/cleaner"
 )
@@ -92,4 +89,16 @@ func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T){
 	if want != got {
 		t.Errorf("want %q, got %q", want, got)
 	}
+}
+
+func ExampleListScreenshots(){
+		
+	got, err := cleaner.ListScreenshots("testdata")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(got)
+	// Output: 
+	// [testdata/Screenshot 2024-07-30 at 9.55.08AM.png]
+
 }
