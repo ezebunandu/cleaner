@@ -1,0 +1,4 @@
+mkdir target
+exec cleaner . target
+stdout 'moved 1 files to target'
+-- Screenshot 2024-07-30 at 9.55.08AM.png --

@@ -1,0 +1,2 @@
+exec cleaner . bogus
+stdout 'no files'

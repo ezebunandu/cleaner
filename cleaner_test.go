@@ -1,12 +1,13 @@
 package cleaner_test
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"testing"
-	"fmt"
 
 	"github.com/ezebunandu/cleaner"
+	"github.com/rogpeppe/go-internal/testscript"
 )
 
 func TestListScreenshots_CorrectlyListsScreenshotsinDirectory(t *testing.T) {
@@ -100,4 +101,17 @@ func ExampleListScreenshots(){
 	// Output: 
 	// [testdata/Screenshot 2024-07-30 at 9.55.08AM.png]
 
+}
+
+func Test(t *testing.T){
+	t.Parallel()
+	testscript.Run(t, testscript.Params{
+		Dir: "testdata/testscript",
+	})
+}
+
+func TestMain(m *testing.M){
+    os.Exit(testscript.RunMain(m, map[string]func() int{
+        "cleaner": cleaner.Main,
+    }))
 }
