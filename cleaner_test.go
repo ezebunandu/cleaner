@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ezebunandu/screenshot-cleaner/cleaner"
+	"github.com/ezebunandu/cleaner"
 )
 
 func TestListScreenshots_CorrectlyListsScreenshotsinDirectory(t *testing.T) {
