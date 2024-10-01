@@ -62,11 +62,10 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 	source := t.TempDir()
 	screenshotFile := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	sourcePath := source + "/" + screenshotFile
-	file, err := os.Create(sourcePath)
+	err := os.WriteFile(sourcePath, []byte{}, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
 	cleaner.MoveScreenshot(sourcePath, target)
 	if err!= nil {
 		t.Fatal(err)
