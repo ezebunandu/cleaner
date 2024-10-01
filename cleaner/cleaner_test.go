@@ -14,7 +14,7 @@ import (
 
 func TestListScreenshots_CorrectlyListsScreenshotsinDirectory(t *testing.T) {
 	t.Parallel()
-	want := []string{"testdata/Screenshot 2024-07-30 at 9.55.08 AM.png"}
+	want := []string{"testdata/Screenshot 2024-07-30 at 9.55.08AM.png"}
 
 	got, err := cleaner.ListScreenshots("testdata")
 	if err != nil {
