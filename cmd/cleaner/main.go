@@ -6,8 +6,6 @@ import (
 	"github.com/ezebunandu/cleaner"
 )
 
-
-
-func main(){
-    os.Exit(cleaner.Main())
+func main() {
+	os.Exit(cleaner.Main())
 }

@@ -39,7 +39,7 @@ func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	err := os.WriteFile(file, want, 0o600)
 	if err != nil {
 		t.Fatal(err)
-	}	
+	}
 	err = cleaner.MoveScreenshot(file, target)
 	if err != nil {
 		t.Fatal(err)
@@ -52,12 +52,12 @@ func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ! slices.Equal(want, got) {
+	if !slices.Equal(want, got) {
 		t.Error("target does not contain the data in source")
 	}
 }
 
-func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
+func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T) {
 	t.Parallel()
 	target := t.TempDir()
 	source := t.TempDir()
@@ -68,7 +68,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 		t.Fatal(err)
 	}
 	cleaner.MoveScreenshot(sourcePath, target)
-	if err!= nil {
+	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{}
@@ -81,7 +81,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T){
 	}
 }
 
-func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T){
+func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T) {
 	t.Parallel()
 	filename := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	want := "2024-07-30"
@@ -91,27 +91,27 @@ func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T){
 	}
 }
 
-func ExampleListScreenshots(){
-		
+func ExampleListScreenshots() {
+
 	got, err := cleaner.ListScreenshots("testdata")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(got)
-	// Output: 
+	// Output:
 	// [testdata/Screenshot 2024-07-30 at 9.55.08AM.png]
 
 }
 
-func Test(t *testing.T){
+func Test(t *testing.T) {
 	t.Parallel()
 	testscript.Run(t, testscript.Params{
 		Dir: "testdata/testscript",
 	})
 }
 
-func TestMain(m *testing.M){
-    os.Exit(testscript.RunMain(m, map[string]func() int{
-        "cleaner": cleaner.Main,
-    }))
+func TestMain(m *testing.M) {
+	os.Exit(testscript.RunMain(m, map[string]func() int{
+		"cleaner": cleaner.Main,
+	}))
 }
