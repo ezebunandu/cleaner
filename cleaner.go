@@ -1,9 +1,11 @@
 package cleaner
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -28,10 +30,13 @@ func ListScreenshots(dir string) ([]string, error) {
 // MoveScreenshot moves file to target.
 func MoveScreenshot(file, target string) error {
 	fileName := filepath.Base(file)
-	dateSubfolder := DateSubfolder(fileName)
+	dateSubfolder, err := DateSubfolder(fileName)
+	if err != nil {
+		return err
+	}
 	targetPath := filepath.Join(target, dateSubfolder)
 
-	_, err := os.Stat(targetPath)
+	_, err = os.Stat(targetPath)
 
 	if err != nil {
 		err := os.Mkdir(targetPath, 0700)
@@ -49,8 +54,14 @@ func MoveScreenshot(file, target string) error {
 }
 
 // DateSubfolder returns the date from filename.
-func DateSubfolder(filename string) string {
-	return strings.Split(filename, " ")[1]
+func DateSubfolder(filename string) (string, error) {
+	re := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
+
+	date := re.FindString(filename)
+	if date == "" {
+		return "", errors.New("no date found in filename")
+	}
+	return date, nil
 }
 
 func Main() int {
