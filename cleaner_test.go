@@ -85,23 +85,12 @@ func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T) {
 	t.Parallel()
 	filename := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	want := "2024-07-30"
-	got, err := cleaner.DateSubfolder(filename)
-	if err != nil {
-		t.Fatal(err)
-	}
+	got := cleaner.DateSubfolder(filename)
 	if want != got {
 		t.Errorf("want %q, got %q", want, got)
 	}
 }
 
-func TestDateSubfolder_ReturnsErrorWhenNoDateInFileName(t *testing.T){
-	t.Parallel()
-	filename := "Screenshot file.png"
-	_, err := cleaner.DateSubfolder(filename)
-	if err == nil {
-		t.Error("want error when no date in subfolder but got none")
-	}
-}
 func ExampleListScreenshots() {
 
 	got, err := cleaner.ListScreenshots("testdata")
