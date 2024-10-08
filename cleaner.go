@@ -50,7 +50,12 @@ func MoveScreenshot(file, target string) error {
 
 // DateSubfolder returns the date from filename.
 func DateSubfolder(filename string) string {
-	return strings.Split(filename, " ")[1]
+	parts := strings.Split(filename, " ")
+
+	if len(parts) < 2 {
+		panic("DateSubfolder should only be called with file names matching a pattern like 'Screenshot 2024-07-30 at 9.55.08 AM.png'")
+	}
+	return parts[1]
 }
 
 func Main() int {
