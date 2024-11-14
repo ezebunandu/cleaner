@@ -66,7 +66,7 @@ func Main() int {
 	source, target := os.Args[1], os.Args[2]
 	screenshots, err := ListScreenshots(source)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 
@@ -78,13 +78,13 @@ func Main() int {
 	_, err = os.Stat(target)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	for _, screenshot := range screenshots {
 		err := MoveScreenshot(screenshot, target)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 	}
