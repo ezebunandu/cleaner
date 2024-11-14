@@ -1,4 +1,4 @@
 ! exec cleaner . bogus 
-stdout 'no such file | The system cannot find the file specified'
+stderr 'no such file | The system cannot find the file specified'
 
 -- Screenshot 2024-07-30 at 9.55.08AM.png --
