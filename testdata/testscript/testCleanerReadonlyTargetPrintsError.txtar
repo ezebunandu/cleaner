@@ -1,0 +1,16 @@
+# Test: Moving screenshots when the target directory is read-only
+
+mkdir target
+chmod 500 target
+
+# Add a screenshot file in the current directory (source)
+-- Screenshot 2024-07-30 at 9.55.08AM.png --
+dummy content
+-- end --
+
+# Run the `cleaner` command with current directory as source
+# Expect it to fail because the target directory is read-only
+exec cleaner . target
+stderr 'mkdir .*: permission denied'
+exit 1
+
