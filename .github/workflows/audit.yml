@@ -8,7 +8,12 @@ jobs:
   security_audit:
     runs-on: ubuntu-latest
     steps:
-        - uses: golang/govulncheck-action@v1
+        - name: Harden the runner (Audit all outbound calls)
+          uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+          with:
+            egress-policy: audit
+
+        - uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
           with:
             go-version-input: 'stable'
             check-latest: true
