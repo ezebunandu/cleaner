@@ -1,7 +1,9 @@
 package cleaner
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,6 +66,19 @@ func FileModeDateFromMetaData(path string) (string, error){
 		return "", err
 	}
 	return info.ModTime().Format("2006-01-02"), nil
+}
+
+func ListFilesByExt(fsys fs.FS, ext string)(paths []string, err error){
+	if ext == ""{
+		return nil, errors.New("extension cannot be empty")
+	}
+	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if filepath.Ext(p) == ext {
+			paths = append(paths, p)
+		}
+		return nil
+	})
+	return paths, nil
 }
 
 func Main() int {

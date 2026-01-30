@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/ezebunandu/cleaner"
+	"github.com/google/go-cmp/cmp"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
@@ -126,10 +128,43 @@ func TestFileModeDate_ReturnsCorrectFileModDateFromMetaData(t *testing.T) {
 
 func TestFileModeDate_ErrorsWhenFileNonExistent(t *testing.T) {
 	t.Parallel()
-	
 	_, err := cleaner.FileModeDateFromMetaData("/nonexistent/file/path.txt")
 	if err == nil {
 		t.Error("want error for non-existent file, got nil")
+	}
+	
+}
+
+func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
+	t.Parallel()
+	fsys := fstest.MapFS{
+		"file.png":                {},
+		"subfolder/subfolder.png": {},
+		"subfolder2/another.go":  {},
+		"subfolder2/file.png":     {},
+	}
+	want := []string{
+		"file.png",
+		"subfolder/subfolder.png",
+		"subfolder2/file.png",
+	}
+	got, err := cleaner.ListFilesByExt(fsys, ".png")
+	if err != nil{
+		t.Fatal(err)
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}	
+}
+
+func TestFilesByExt_ErrorsWhenExtNotGiven(t *testing.T) {
+	t.Parallel()
+	fsys := fstest.MapFS{
+		"file.png":                {},
+	}
+	_, err := cleaner.ListFilesByExt(fsys, "")
+	if err == nil{
+		t.Fatal("want error given empty ext by got none")
 	}
 	
 }
