@@ -14,6 +14,43 @@ import (
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
+func TestCmdFromArgs(t *testing.T) {
+	testCases := []struct {
+		desc string
+		args []string
+		want cleaner.Cmd
+	}{
+		{
+			desc: "With No Args Returns Usage",
+			args: []string{"cleaner"},
+			want: cleaner.Cmd{Operation: cleaner.CmdUsage,},
+		},
+		{
+			desc: "With Only Source Returns Usage",
+			args: []string{"cleaner", "source"},
+			want: cleaner.Cmd{Operation: cleaner.CmdUsage,},
+		},
+		{
+			desc: "With Source and Target Returns Move",
+			args: []string{"cleaner", "source", "target"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
+		},
+		{
+			desc: "With Ext Flag Returns Move with Ext",
+			args: []string{"cleaner", "-ext", "png", "source", "target"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
+		},	
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			got := cleaner.CmdFromArgs(tC.args)
+			if !cmp.Equal(tC.want, got){
+				t.Error(cmp.Diff(tC.want, got))
+			}
+		})
+	}
+}
+
 func TestListScreenshots_CorrectlyListsScreenshotsinDirectory(t *testing.T) {
 	t.Parallel()
 	want := []string{"testdata/Screenshot 2024-07-30 at 9.55.08AM.png"}
@@ -132,7 +169,7 @@ func TestFileModeDate_ErrorsWhenFileNonExistent(t *testing.T) {
 	if err == nil {
 		t.Error("want error for non-existent file, got nil")
 	}
-	
+
 }
 
 func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
@@ -140,7 +177,7 @@ func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
 	fsys := fstest.MapFS{
 		"file.png":                {},
 		"subfolder/subfolder.png": {},
-		"subfolder2/another.go":  {},
+		"subfolder2/another.go":   {},
 		"subfolder2/file.png":     {},
 	}
 	want := []string{
@@ -149,24 +186,24 @@ func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
 		"subfolder2/file.png",
 	}
 	got, err := cleaner.ListFilesByExt(fsys, ".png")
-	if err != nil{
+	if err != nil {
 		t.Fatal(err)
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
-	}	
+	}
 }
 
 func TestFilesByExt_ErrorsWhenExtNotGiven(t *testing.T) {
 	t.Parallel()
 	fsys := fstest.MapFS{
-		"file.png":                {},
+		"file.png": {},
 	}
 	_, err := cleaner.ListFilesByExt(fsys, "")
-	if err == nil{
+	if err == nil {
 		t.Fatal("want error given empty ext by got none")
 	}
-	
+
 }
 func ExampleListScreenshots() {
 
