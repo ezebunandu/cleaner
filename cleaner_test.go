@@ -3,8 +3,10 @@ package cleaner_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/ezebunandu/cleaner"
 	"github.com/rogpeppe/go-internal/testscript"
@@ -91,6 +93,46 @@ func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T) {
 	}
 }
 
+func TestFileModeDate_ReturnsCorrectFileModDateFromMetaData(t *testing.T) {
+	t.Parallel()
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "test.txt")
+
+	// Create an empty file
+	_, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	// Set a fixed modification time
+	fixedTime := time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
+	err = os.Chtimes(path, fixedTime, fixedTime)
+	if err != nil {
+		t.Fatalf("failed to set file time: %v", err)
+	}
+
+	// Call the function
+	got, err := cleaner.FileModeDateFromMetaData(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the result in yyyy-mm-dd format
+	want := "2024-01-15"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestFileModeDate_ErrorsWhenFileNonExistent(t *testing.T) {
+	t.Parallel()
+	
+	_, err := cleaner.FileModeDateFromMetaData("/nonexistent/file/path.txt")
+	if err == nil {
+		t.Error("want error for non-existent file, got nil")
+	}
+	
+}
 func ExampleListScreenshots() {
 
 	got, err := cleaner.ListScreenshots("testdata")

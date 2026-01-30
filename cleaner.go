@@ -58,6 +58,14 @@ func DateSubfolder(filename string) string {
 	return parts[1]
 }
 
+func FileModeDateFromMetaData(path string) (string, error){
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	return info.ModTime().Format("2006-01-02"), nil
+}
+
 func Main() int {
 	if len(os.Args) != 3 {
 		fmt.Println(usage)
