@@ -22,9 +22,9 @@ type Cmd struct {
 	Extension string
 }
 
-func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
-}
+// func NewCmd() *Cmd {
+// 	return &Cmd{Extension: "png"}
+// }
 
 func CmdFromArgs(args []string) Cmd {
 	if len(args) < 3 {
@@ -40,7 +40,19 @@ func CmdFromArgs(args []string) Cmd {
 	if len(pos) < 2 {
 		return Cmd{Operation: CmdUsage}
 	}
-	return Cmd{Operation: CmdMove, Source: pos[0], Target: pos[1], Extension: *ext}
+	// check if the user supplied the extension flag
+	extVal := ""
+	fSet.Visit(func(f *flag.Flag) {
+		if f.Name == "ext"{
+			extVal = *ext
+		}
+	})
+	source, target := pos[0], pos[1]
+	// only set extension if user has supplied the flag
+	if extVal != "" {
+		return Cmd{Operation: CmdMove, Source: source, Target: target, Extension: extVal}
+	}
+	return Cmd{Operation: CmdMove, Source: source, Target: target}
 }
 
 const usage = `usage: cleaner <SOURCE> <TARGET>`
