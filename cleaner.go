@@ -43,7 +43,7 @@ func CmdFromArgs(args []string) Cmd {
 	// check if the user supplied the extension flag
 	extVal := ""
 	fSet.Visit(func(f *flag.Flag) {
-		if f.Name == "ext"{
+		if f.Name == "ext" {
 			extVal = *ext
 		}
 	})
@@ -73,8 +73,8 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
-// MoveScreenshot moves file to target.
-func MoveScreenshot(file, target string) error {
+// MoveFile moves file to target.
+func MoveFile(file, target string) error {
 	fileName := filepath.Base(file)
 	dateSubfolder := DateSubfolder(fileName)
 	targetPath := filepath.Join(target, dateSubfolder)
@@ -152,7 +152,7 @@ func Main() int {
 		return 1
 	}
 	for _, screenshot := range screenshots {
-		err := MoveScreenshot(screenshot, cmd.Target)
+		err := MoveFile(screenshot, cmd.Target)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
