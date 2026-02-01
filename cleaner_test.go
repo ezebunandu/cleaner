@@ -81,7 +81,7 @@ func TestMoveFile_CopiesScreenshotToTargetDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleaner.MoveFile(file, target)
+	err = cleaner.MoveScreenshot(file, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestMoveFile_RemovesScreenshotFromSourcDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleaner.MoveFile(sourcePath, target)
+	cleaner.MoveScreenshot(sourcePath, target)
 	if err != nil {
 		t.Fatal(err)
 	}
