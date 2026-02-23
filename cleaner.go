@@ -22,9 +22,9 @@ type Cmd struct {
 	Extension string
 }
 
-func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
-}
+// func NewCmd() *Cmd {
+// 	return &Cmd{Extension: "png"}
+// }
 
 func CmdFromArgs(args []string) Cmd {
 	if len(args) < 3 {
@@ -40,7 +40,19 @@ func CmdFromArgs(args []string) Cmd {
 	if len(pos) < 2 {
 		return Cmd{Operation: CmdUsage}
 	}
-	return Cmd{Operation: CmdMove, Source: pos[0], Target: pos[1], Extension: *ext}
+	// check if the user supplied the extension flag
+	extVal := ""
+	fSet.Visit(func(f *flag.Flag) {
+		if f.Name == "ext" {
+			extVal = *ext
+		}
+	})
+	source, target := pos[0], pos[1]
+	// only set extension if user has supplied the flag
+	if extVal != "" {
+		return Cmd{Operation: CmdMove, Source: source, Target: target, Extension: extVal}
+	}
+	return Cmd{Operation: CmdMove, Source: source, Target: target}
 }
 
 const usage = `usage: cleaner <SOURCE> <TARGET>`
@@ -61,14 +73,12 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
-// MoveScreenshot moves file to target.
-func MoveScreenshot(file, target string) error {
+// moveFileToDateSubfolder moves file to target/dateSubfolder, creating the subfolder if needed.
+func moveFileToDateSubfolder(file, target, dateSubfolder string) error {
 	fileName := filepath.Base(file)
-	dateSubfolder := DateSubfolder(fileName)
 	targetPath := filepath.Join(target, dateSubfolder)
 
 	_, err := os.Stat(targetPath)
-
 	if err != nil {
 		err := os.Mkdir(targetPath, 0700)
 		if err != nil {
@@ -82,6 +92,21 @@ func MoveScreenshot(file, target string) error {
 		return err
 	}
 	return nil
+}
+
+// MoveScreenshot moves file to target.
+func MoveScreenshot(file, target string) error {
+	fileName := filepath.Base(file)
+	dateSubfolder := DateSubfolder(fileName)
+	return moveFileToDateSubfolder(file, target, dateSubfolder)
+}
+
+func MoveFile(file, target string) error {
+	date, err := FileModeDateFromMetaData(file)
+	if err != nil {
+		return err
+	}
+	return moveFileToDateSubfolder(file, target, date)
 }
 
 // DateSubfolder returns the date from filename.
@@ -115,6 +140,29 @@ func ListFilesByExt(fsys fs.FS, ext string) (paths []string, err error) {
 	return paths, nil
 }
 
+// moveFiles validates the target and moves all files using the provided move function.
+func moveFiles(files []string, target string, moveFn func(string, string) error) int {
+	if len(files) == 0 {
+		fmt.Println("no files to move")
+		return 0
+	}
+
+	if _, err := os.Stat(target); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+
+	for _, file := range files {
+		err := moveFn(file, target)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+	}
+	fmt.Printf("moved %d files to %s\n", len(files), target)
+	return 0
+}
+
 func Main() int {
 	cmd := CmdFromArgs(os.Args)
 	if cmd.Operation == CmdUsage {
@@ -122,32 +170,31 @@ func Main() int {
 		return 0
 	}
 
-	screenshots, err := ListScreenshots(cmd.Source)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
+	var files []string
+	var err error
 
-	if len(screenshots) == 0 {
-		fmt.Println("no files to move")
-		return 0
-	}
-
-	_, err = os.Stat(cmd.Target)
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	for _, screenshot := range screenshots {
-		err := MoveScreenshot(screenshot, cmd.Target)
+	if cmd.Extension != "" {
+		fsys := os.DirFS(cmd.Source)
+		fmt.Fprintf(os.Stdout, "searching for files with extension: .%s\n", cmd.Extension)
+		relativeFiles, err := ListFilesByExt(fsys, "."+cmd.Extension)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+		// Convert relative paths to absolute paths
+		files = make([]string, len(relativeFiles))
+		for i, file := range relativeFiles {
+			files[i] = filepath.Join(cmd.Source, file)
+		}
+		return moveFiles(files, cmd.Target, MoveFile)
+	} else {
+		files, err = ListScreenshots(cmd.Source)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return moveFiles(files, cmd.Target, MoveScreenshot)
 	}
-	fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
-	return 0
 }
 
 // func Main() int {

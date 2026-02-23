@@ -1,0 +1,4 @@
+mkdir target
+exec cleaner -ext png . target
+stdout 'moved 1 files to target'
+-- file1.png --
