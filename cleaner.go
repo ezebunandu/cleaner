@@ -99,7 +99,7 @@ func FileModeDateFromMetaData(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return info.ModTime().Format("2006-01-02"), nil
+	return info.ModTime().UTC().Format("2006-01-02"), nil
 }
 
 func ListFilesByExt(fsys fs.FS, ext string) ([]string, error) {
@@ -125,6 +125,23 @@ func ListFilesByExt(fsys fs.FS, ext string) ([]string, error) {
 		}
 	}
 	return paths, nil
+}
+
+func MoveFileByExt(file, target string) error {
+	dateSubfolder, err := FileModeDateFromMetaData(file)
+	if err != nil {
+		return err
+	}
+	destDir := filepath.Join(target, dateSubfolder)
+	if err := os.MkdirAll(destDir, 0700); err != nil {
+		return err
+	}
+	destPath := filepath.Join(destDir, filepath.Base(file))
+	if _, err := os.Stat(destPath); err == nil {
+		fmt.Printf("skipping %s: already exists at %s\n", filepath.Base(file), destPath)
+		return nil
+	}
+	return os.Rename(file, destPath)
 }
 
 func Main() int {
