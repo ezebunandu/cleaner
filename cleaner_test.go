@@ -33,7 +33,7 @@ func TestCmdFromArgs(t *testing.T) {
 		{
 			desc: "With Source and Target Returns Move",
 			args: []string{"cleaner", "source", "target"},
-			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: ""},
 		},
 		{
 			desc: "With Ext Flag Returns Move with Ext",

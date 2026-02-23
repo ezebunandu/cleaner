@@ -23,7 +23,7 @@ type Cmd struct {
 }
 
 func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
+	return &Cmd{Extension: ""}
 }
 
 func CmdFromArgs(args []string) Cmd {
@@ -31,7 +31,7 @@ func CmdFromArgs(args []string) Cmd {
 		return Cmd{Operation: CmdUsage}
 	}
 	fSet := flag.NewFlagSet("cleaner", flag.ContinueOnError)
-	ext := fSet.String("ext", "png", "the file extension to match")
+	ext := fSet.String("ext", "", "the file extension to match")
 	err := fSet.Parse(args[1:]) // skip program name so flags like -ext are parsed
 	if err != nil {
 		return Cmd{Operation: CmdUsage}
