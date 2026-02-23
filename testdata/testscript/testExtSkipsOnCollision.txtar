@@ -1,0 +1,10 @@
+mkdir target
+mkdir backup
+cp sample.png backup/sample.png
+exec cleaner -ext png . target
+stdout 'moved 1 files to target'
+cp backup/sample.png sample.png
+exec cleaner -ext png . target
+stdout 'skipping sample\.png'
+exists sample.png
+-- sample.png --
