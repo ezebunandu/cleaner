@@ -102,16 +102,28 @@ func FileModeDateFromMetaData(path string) (string, error) {
 	return info.ModTime().Format("2006-01-02"), nil
 }
 
-func ListFilesByExt(fsys fs.FS, ext string) (paths []string, err error) {
+func ListFilesByExt(fsys fs.FS, ext string) ([]string, error) {
 	if ext == "" {
 		return nil, errors.New("extension cannot be empty")
 	}
-	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ext {
-			paths = append(paths, p)
+	// Normalise: strip leading dot, lowercase
+	ext = strings.TrimPrefix(ext, ".")
+	ext = strings.ToLower(ext)
+
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, err
+	}
+	var paths []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
 		}
-		return nil
-	})
+		name := entry.Name()
+		if strings.ToLower(filepath.Ext(name)) == "."+ext {
+			paths = append(paths, name)
+		}
+	}
 	return paths, nil
 }
 

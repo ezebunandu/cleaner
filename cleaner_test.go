@@ -180,17 +180,68 @@ func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
 		"subfolder2/another.go":   {},
 		"subfolder2/file.png":     {},
 	}
-	want := []string{
-		"file.png",
-		"subfolder/subfolder.png",
-		"subfolder2/file.png",
-	}
-	got, err := cleaner.ListFilesByExt(fsys, ".png")
+	want := []string{"file.png"}
+	got, err := cleaner.ListFilesByExt(fsys, "png")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestListFilesByExt_TableDriven(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name  string
+		ext   string
+		fsys  fstest.MapFS
+		want  []string
+	}{
+		{
+			name: "Top-level only",
+			ext:  "png",
+			fsys: fstest.MapFS{
+				"file.png":     {},
+				"sub/file.png": {},
+			},
+			want: []string{"file.png"},
+		},
+		{
+			name: "Case-insensitive PNG uppercase",
+			ext:  "png",
+			fsys: fstest.MapFS{
+				"photo.PNG": {},
+			},
+			want: []string{"photo.PNG"},
+		},
+		{
+			name: "Case-insensitive mixed case",
+			ext:  "png",
+			fsys: fstest.MapFS{
+				"img.Png": {},
+			},
+			want: []string{"img.Png"},
+		},
+		{
+			name: "Dot normalisation",
+			ext:  ".png",
+			fsys: fstest.MapFS{
+				"file.png": {},
+			},
+			want: []string{"file.png"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := cleaner.ListFilesByExt(tt.fsys, tt.ext)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !cmp.Equal(tt.want, got) {
+				t.Error(cmp.Diff(tt.want, got))
+			}
+		})
 	}
 }
 
