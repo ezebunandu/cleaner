@@ -23,28 +23,28 @@ func TestCmdFromArgs(t *testing.T) {
 		{
 			desc: "With No Args Returns Usage",
 			args: []string{"cleaner"},
-			want: cleaner.Cmd{Operation: cleaner.CmdUsage},
+			want: cleaner.Cmd{Operation: cleaner.CmdUsage,},
 		},
 		{
 			desc: "With Only Source Returns Usage",
 			args: []string{"cleaner", "source"},
-			want: cleaner.Cmd{Operation: cleaner.CmdUsage},
+			want: cleaner.Cmd{Operation: cleaner.CmdUsage,},
 		},
 		{
 			desc: "With Source and Target Returns Move",
 			args: []string{"cleaner", "source", "target"},
-			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
 		},
 		{
 			desc: "With Ext Flag Returns Move with Ext",
 			args: []string{"cleaner", "-ext", "png", "source", "target"},
 			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
-		},
+		},	
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			got := cleaner.CmdFromArgs(tC.args)
-			if !cmp.Equal(tC.want, got) {
+			if !cmp.Equal(tC.want, got){
 				t.Error(cmp.Diff(tC.want, got))
 			}
 		})
@@ -72,7 +72,7 @@ func TestListFiles_ReturnsErrorWhenDirNotReadable(t *testing.T) {
 	}
 }
 
-func TestMoveFile_CopiesScreenshotToTargetDir(t *testing.T) {
+func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	t.Parallel()
 	target := t.TempDir()
 	file := t.TempDir() + "/" + "Screenshot 2024-07-30 at 9.55.08 AM.png"
@@ -98,7 +98,7 @@ func TestMoveFile_CopiesScreenshotToTargetDir(t *testing.T) {
 	}
 }
 
-func TestMoveFile_RemovesScreenshotFromSourcDir(t *testing.T) {
+func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T) {
 	t.Parallel()
 	target := t.TempDir()
 	source := t.TempDir()
