@@ -23,7 +23,7 @@ type Cmd struct {
 }
 
 func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
+	return &Cmd{Extension: ""}
 }
 
 func CmdFromArgs(args []string) Cmd {
@@ -31,7 +31,7 @@ func CmdFromArgs(args []string) Cmd {
 		return Cmd{Operation: CmdUsage}
 	}
 	fSet := flag.NewFlagSet("cleaner", flag.ContinueOnError)
-	ext := fSet.String("ext", "png", "the file extension to match")
+	ext := fSet.String("ext", "", "the file extension to match")
 	err := fSet.Parse(args[1:]) // skip program name so flags like -ext are parsed
 	if err != nil {
 		return Cmd{Operation: CmdUsage}
@@ -99,20 +99,49 @@ func FileModeDateFromMetaData(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return info.ModTime().Format("2006-01-02"), nil
+	return info.ModTime().UTC().Format("2006-01-02"), nil
 }
 
-func ListFilesByExt(fsys fs.FS, ext string) (paths []string, err error) {
+func ListFilesByExt(fsys fs.FS, ext string) ([]string, error) {
 	if ext == "" {
 		return nil, errors.New("extension cannot be empty")
 	}
-	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ext {
-			paths = append(paths, p)
+	// Normalise: strip leading dot, lowercase
+	ext = strings.TrimPrefix(ext, ".")
+	ext = strings.ToLower(ext)
+
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, err
+	}
+	var paths []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
 		}
-		return nil
-	})
+		name := entry.Name()
+		if strings.ToLower(filepath.Ext(name)) == "."+ext {
+			paths = append(paths, name)
+		}
+	}
 	return paths, nil
+}
+
+func MoveFileByExt(file, target string) error {
+	dateSubfolder, err := FileModeDateFromMetaData(file)
+	if err != nil {
+		return err
+	}
+	destDir := filepath.Join(target, dateSubfolder)
+	if err := os.MkdirAll(destDir, 0700); err != nil {
+		return err
+	}
+	destPath := filepath.Join(destDir, filepath.Base(file))
+	if _, err := os.Stat(destPath); err == nil {
+		fmt.Printf("skipping %s: already exists at %s\n", filepath.Base(file), destPath)
+		return nil
+	}
+	return os.Rename(file, destPath)
 }
 
 func Main() int {
@@ -122,64 +151,50 @@ func Main() int {
 		return 0
 	}
 
-	screenshots, err := ListScreenshots(cmd.Source)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-
-	if len(screenshots) == 0 {
-		fmt.Println("no files to move")
-		return 0
-	}
-
-	_, err = os.Stat(cmd.Target)
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	for _, screenshot := range screenshots {
-		err := MoveScreenshot(screenshot, cmd.Target)
+	if cmd.Extension != "" {
+		// Ext-based path
+		files, err := ListFilesByExt(os.DirFS(cmd.Source), cmd.Extension)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+		if len(files) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		if _, err := os.Stat(cmd.Target); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		for _, f := range files {
+			if err := MoveFileByExt(filepath.Join(cmd.Source, f), cmd.Target); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+		}
+		fmt.Printf("moved %d files to %s\n", len(files), cmd.Target)
+	} else {
+		// Screenshot path (unchanged)
+		screenshots, err := ListScreenshots(cmd.Source)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if len(screenshots) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		if _, err := os.Stat(cmd.Target); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		for _, screenshot := range screenshots {
+			if err := MoveScreenshot(screenshot, cmd.Target); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+		}
+		fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
 	}
-	fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
 	return 0
 }
-
-// func Main() int {
-// 	if len(os.Args) != 3 {
-// 		fmt.Println(usage)
-// 		return 0
-// 	}
-// 	source, target := os.Args[1], os.Args[2]
-// 	screenshots, err := ListScreenshots(source)
-// 	if err != nil {
-// 		fmt.Fprintln(os.Stderr, err)
-// 		return 1
-// 	}
-
-// 	if len(screenshots) == 0 {
-// 		fmt.Println("no files to move")
-// 		return 0
-// 	}
-
-// 	_, err = os.Stat(target)
-
-// 	if err != nil {
-// 		fmt.Fprintln(os.Stderr, err)
-// 		return 1
-// 	}
-// 	for _, screenshot := range screenshots {
-// 		err := MoveScreenshot(screenshot, target)
-// 		if err != nil {
-// 			fmt.Fprintln(os.Stderr, err)
-// 			return 1
-// 		}
-// 	}
-// 	fmt.Printf("moved %d files to %s\n", len(screenshots), target)
-// 	return 0
-// }
