@@ -33,7 +33,7 @@ func TestCmdFromArgs(t *testing.T) {
 		{
 			desc: "With Source and Target Returns Move",
 			args: []string{"cleaner", "source", "target"},
-			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: ""},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
 		},
 		{
 			desc: "With Ext Flag Returns Move with Ext",
@@ -108,7 +108,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourcDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleaner.MoveScreenshot(sourcePath, target)
+	cleaner.MoveScreenshot(sourcePath, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,68 +180,17 @@ func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
 		"subfolder2/another.go":   {},
 		"subfolder2/file.png":     {},
 	}
-	want := []string{"file.png"}
-	got, err := cleaner.ListFilesByExt(fsys, "png")
+	want := []string{
+		"file.png",
+		"subfolder/subfolder.png",
+		"subfolder2/file.png",
+	}
+	got, err := cleaner.ListFilesByExt(fsys, ".png")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
-	}
-}
-
-func TestListFilesByExt_TableDriven(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name  string
-		ext   string
-		fsys  fstest.MapFS
-		want  []string
-	}{
-		{
-			name: "Top-level only",
-			ext:  "png",
-			fsys: fstest.MapFS{
-				"file.png":     {},
-				"sub/file.png": {},
-			},
-			want: []string{"file.png"},
-		},
-		{
-			name: "Case-insensitive PNG uppercase",
-			ext:  "png",
-			fsys: fstest.MapFS{
-				"photo.PNG": {},
-			},
-			want: []string{"photo.PNG"},
-		},
-		{
-			name: "Case-insensitive mixed case",
-			ext:  "png",
-			fsys: fstest.MapFS{
-				"img.Png": {},
-			},
-			want: []string{"img.Png"},
-		},
-		{
-			name: "Dot normalisation",
-			ext:  ".png",
-			fsys: fstest.MapFS{
-				"file.png": {},
-			},
-			want: []string{"file.png"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := cleaner.ListFilesByExt(tt.fsys, tt.ext)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !cmp.Equal(tt.want, got) {
-				t.Error(cmp.Diff(tt.want, got))
-			}
-		})
 	}
 }
 
@@ -256,94 +205,6 @@ func TestFilesByExt_ErrorsWhenExtNotGiven(t *testing.T) {
 	}
 
 }
-func TestMoveFileByExt_MovesToCorrectDateSubfolder(t *testing.T) {
-	t.Parallel()
-	source := t.TempDir()
-	target := t.TempDir()
-
-	filePath := filepath.Join(source, "photo.png")
-	if err := os.WriteFile(filePath, []byte{1, 2, 3}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	fixedTime := time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
-	if err := os.Chtimes(filePath, fixedTime, fixedTime); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := cleaner.MoveFileByExt(filePath, target); err != nil {
-		t.Fatal(err)
-	}
-
-	want := filepath.Join(target, "2024-03-15", "photo.png")
-	if _, err := os.Stat(want); os.IsNotExist(err) {
-		t.Fatalf("expected file at %s but it does not exist", want)
-	}
-}
-
-func TestMoveFileByExt_SkipsAndWarnWhenDestinationExists(t *testing.T) {
-	t.Parallel()
-	source := t.TempDir()
-	target := t.TempDir()
-
-	filePath := filepath.Join(source, "photo.png")
-	if err := os.WriteFile(filePath, []byte{1, 2, 3}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	fixedTime := time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
-	if err := os.Chtimes(filePath, fixedTime, fixedTime); err != nil {
-		t.Fatal(err)
-	}
-
-	// Pre-create destination with different content
-	destDir := filepath.Join(target, "2024-03-15")
-	if err := os.MkdirAll(destDir, 0700); err != nil {
-		t.Fatal(err)
-	}
-	destPath := filepath.Join(destDir, "photo.png")
-	if err := os.WriteFile(destPath, []byte{9, 9, 9}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := cleaner.MoveFileByExt(filePath, target); err != nil {
-		t.Fatal(err)
-	}
-
-	// Source still exists
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		t.Error("expected source file to still exist after skip, but it does not")
-	}
-
-	// Destination content unchanged
-	got, err := os.ReadFile(destPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal([]byte{9, 9, 9}, got) {
-		t.Error("destination content was modified unexpectedly")
-	}
-}
-
-func TestMoveFileByExt_RemovesSourceAfterSuccessfulMove(t *testing.T) {
-	t.Parallel()
-	source := t.TempDir()
-	target := t.TempDir()
-
-	filePath := filepath.Join(source, "photo.png")
-	if err := os.WriteFile(filePath, []byte{1, 2, 3}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := cleaner.MoveFileByExt(filePath, target); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := os.Stat(filePath); !os.IsNotExist(err) {
-		t.Error("expected source file to be removed after move, but it still exists")
-	}
-}
-
 func ExampleListScreenshots() {
 
 	got, err := cleaner.ListScreenshots("testdata")

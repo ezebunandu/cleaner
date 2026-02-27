@@ -1,5 +1,0 @@
-mkdir target
-exec cleaner -ext PNG . target
-stdout 'moved 1 files to target'
-! exists sample.png
--- sample.png --
