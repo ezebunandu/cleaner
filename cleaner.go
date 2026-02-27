@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -61,13 +62,13 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
-// MoveScreenshot moves file to target.
-func MoveScreenshot(file, target string) error {
+// MoveFiles moves file to the datesubfolder on target.
+func MoveFiles(file, target string) error {
 	fileName := filepath.Base(file)
-	dateSubfolder := DateSubfolder(fileName)
+	dateSubfolder, err := DateSubfolder(fileName)
 	targetPath := filepath.Join(target, dateSubfolder)
 
-	_, err := os.Stat(targetPath)
+	_, err = os.Stat(targetPath)
 
 	if err != nil {
 		err := os.Mkdir(targetPath, 0700)
@@ -84,14 +85,16 @@ func MoveScreenshot(file, target string) error {
 	return nil
 }
 
-// DateSubfolder returns the date from filename.
-func DateSubfolder(filename string) string {
-	parts := strings.Split(filename, " ")
+var date = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})`)
 
-	if len(parts) < 2 {
-		panic("DateSubfolder should only be called with file names matching a pattern like 'Screenshot 2024-07-30 at 9.55.08 AM.png'")
+// DateSubfolder returns the date from filename.
+func DateSubfolder(filename string) (string, error) {
+	matches := date.FindStringSubmatch(filename)
+
+	if len(matches) < 2 {
+		return FileModeDateFromMetaData(filename)
 	}
-	return parts[1]
+	return matches[1], nil
 }
 
 func FileModeDateFromMetaData(path string) (string, error) {
@@ -140,7 +143,7 @@ func Main() int {
 		return 1
 	}
 	for _, screenshot := range screenshots {
-		err := MoveScreenshot(screenshot, cmd.Target)
+		err := MoveFiles(screenshot, cmd.Target)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1

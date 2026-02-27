@@ -81,7 +81,7 @@ func TestMoveScreenshot_CopiesScreenshotToTargetDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleaner.MoveScreenshot(file, target)
+	err = cleaner.MoveFiles(file, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestMoveScreenshot_RemovesScreenshotFromSourceDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleaner.MoveScreenshot(sourcePath, target)
+	err = cleaner.MoveFiles(sourcePath, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,11 +122,35 @@ func TestMoveScreenshot_RemovesScreenshotFromSourceDir(t *testing.T) {
 	}
 }
 
-func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileName(t *testing.T) {
+func TestDateSubfolder_ReturnsCorrectSubfolderGivenFileNameContainingDate(t *testing.T) {
 	t.Parallel()
 	filename := "Screenshot 2024-07-30 at 9.55.08 AM.png"
 	want := "2024-07-30"
-	got := cleaner.DateSubfolder(filename)
+	got, err := cleaner.DateSubfolder(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want != got {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestDateSubfolder_ReturnsSubfolderFromFileMetadataWhenNameDoesNotContainDate(t *testing.T) {
+	t.Parallel()
+	path := t.TempDir()
+	filepath := filepath.Join(path, "file.png")
+	if err := os.WriteFile(filepath, []byte{}, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	modTime := time.Date(2026, 02, 26, 0, 0, 0, 0, time.Local)
+	if err := os.Chtimes(filepath, modTime, modTime); err != nil {
+		t.Fatal(err)
+	}
+	want := "2026-02-26"
+	got, err := cleaner.DateSubfolder(filepath)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if want != got {
 		t.Errorf("want %q, got %q", want, got)
 	}
@@ -137,26 +161,22 @@ func TestFileModeDate_ReturnsCorrectFileModDateFromMetaData(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := filepath.Join(tmpDir, "test.txt")
 
-	// Create an empty file
 	_, err := os.Create(path)
 	if err != nil {
 		t.Fatalf("failed to create file: %v", err)
 	}
 
-	// Set a fixed modification time
 	fixedTime := time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
 	err = os.Chtimes(path, fixedTime, fixedTime)
 	if err != nil {
 		t.Fatalf("failed to set file time: %v", err)
 	}
 
-	// Call the function
 	got, err := cleaner.FileModeDateFromMetaData(path)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify the result in yyyy-mm-dd format
 	want := "2024-01-15"
 	if got != want {
 		t.Errorf("want %q, got %q", want, got)
