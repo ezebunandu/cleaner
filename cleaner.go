@@ -149,37 +149,3 @@ func Main() int {
 	fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
 	return 0
 }
-
-// func Main() int {
-// 	if len(os.Args) != 3 {
-// 		fmt.Println(usage)
-// 		return 0
-// 	}
-// 	source, target := os.Args[1], os.Args[2]
-// 	screenshots, err := ListScreenshots(source)
-// 	if err != nil {
-// 		fmt.Fprintln(os.Stderr, err)
-// 		return 1
-// 	}
-
-// 	if len(screenshots) == 0 {
-// 		fmt.Println("no files to move")
-// 		return 0
-// 	}
-
-// 	_, err = os.Stat(target)
-
-// 	if err != nil {
-// 		fmt.Fprintln(os.Stderr, err)
-// 		return 1
-// 	}
-// 	for _, screenshot := range screenshots {
-// 		err := MoveScreenshot(screenshot, target)
-// 		if err != nil {
-// 			fmt.Fprintln(os.Stderr, err)
-// 			return 1
-// 		}
-// 	}
-// 	fmt.Printf("moved %d files to %s\n", len(screenshots), target)
-// 	return 0
-// }
