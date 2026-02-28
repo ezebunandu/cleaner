@@ -22,6 +22,7 @@ type Cmd struct {
 	Target    string
 	Extension string
 	MatchedFiles []string
+	DryRun bool
 }
 
 func NewCmd() *Cmd {
