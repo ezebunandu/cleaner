@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -20,10 +21,11 @@ type Cmd struct {
 	Source    string
 	Target    string
 	Extension string
+	MatchedFiles []string
 }
 
 func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
+	return &Cmd{Extension: ""}
 }
 
 func CmdFromArgs(args []string) Cmd {
@@ -31,7 +33,7 @@ func CmdFromArgs(args []string) Cmd {
 		return Cmd{Operation: CmdUsage}
 	}
 	fSet := flag.NewFlagSet("cleaner", flag.ContinueOnError)
-	ext := fSet.String("ext", "png", "the file extension to match")
+	ext := fSet.String("ext", "", "the file extension to match")
 	err := fSet.Parse(args[1:]) // skip program name so flags like -ext are parsed
 	if err != nil {
 		return Cmd{Operation: CmdUsage}
@@ -61,13 +63,13 @@ func ListScreenshots(dir string) ([]string, error) {
 	return results, nil
 }
 
-// MoveScreenshot moves file to target.
-func MoveScreenshot(file, target string) error {
+// MoveFiles moves file to the datesubfolder on target.
+func MoveFiles(file, target string) error {
 	fileName := filepath.Base(file)
-	dateSubfolder := DateSubfolder(fileName)
+	dateSubfolder, err := DateSubfolder(fileName)
 	targetPath := filepath.Join(target, dateSubfolder)
 
-	_, err := os.Stat(targetPath)
+	_, err = os.Stat(targetPath)
 
 	if err != nil {
 		err := os.Mkdir(targetPath, 0700)
@@ -84,14 +86,17 @@ func MoveScreenshot(file, target string) error {
 	return nil
 }
 
-// DateSubfolder returns the date from filename.
-func DateSubfolder(filename string) string {
-	parts := strings.Split(filename, " ")
+var date = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})`)
 
-	if len(parts) < 2 {
-		panic("DateSubfolder should only be called with file names matching a pattern like 'Screenshot 2024-07-30 at 9.55.08 AM.png'")
+// DateSubfolder returns the date from filename if the filename contains a date.
+// else it gets the date from the file metadata's last modified time
+func DateSubfolder(filename string) (string, error) {
+	matches := date.FindStringSubmatch(filename)
+
+	if len(matches) < 2 {
+		return FileModeDateFromMetaData(filename)
 	}
-	return parts[1]
+	return matches[1], nil
 }
 
 func FileModeDateFromMetaData(path string) (string, error) {
@@ -102,13 +107,17 @@ func FileModeDateFromMetaData(path string) (string, error) {
 	return info.ModTime().Format("2006-01-02"), nil
 }
 
-func ListFilesByExt(fsys fs.FS, ext string) (paths []string, err error) {
+func ListFilesByExt(root string, fsys fs.FS, ext string, ) (paths []string, err error) {
 	if ext == "" {
 		return nil, errors.New("extension cannot be empty")
 	}
+	matchExt := ext
+	if ext[0] != '.' {
+		matchExt = "." + ext
+	}
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ext {
-			paths = append(paths, p)
+		if filepath.Ext(p) == matchExt {
+			paths = append(paths, root+"/"+p)
 		}
 		return nil
 	})
@@ -121,31 +130,43 @@ func Main() int {
 		fmt.Println(usage)
 		return 0
 	}
+	if cmd.Extension != "" {
+		files, err := ListFilesByExt(cmd.Source, os.DirFS(cmd.Source), cmd.Extension)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if len(files) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		cmd.MatchedFiles = files
+	} else {
+		var screenshots []string
+		screenshots, err := ListScreenshots(cmd.Source)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if len(screenshots) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		cmd.MatchedFiles = screenshots
+	}
 
-	screenshots, err := ListScreenshots(cmd.Source)
+	_, err := os.Stat(cmd.Target)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-
-	if len(screenshots) == 0 {
-		fmt.Println("no files to move")
-		return 0
-	}
-
-	_, err = os.Stat(cmd.Target)
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	for _, screenshot := range screenshots {
-		err := MoveScreenshot(screenshot, cmd.Target)
+	for _, f := range cmd.MatchedFiles {
+		err := MoveFiles(f, cmd.Target)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 	}
-	fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
+	fmt.Printf("moved %d files to %s\n", len(cmd.MatchedFiles), cmd.Target)
 	return 0
 }
