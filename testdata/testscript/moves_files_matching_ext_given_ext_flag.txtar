@@ -1,0 +1,11 @@
+mkdir target
+exec touch -t 202602261200 sample.png
+exists sample.txt
+exec cleaner -ext png . target
+stdout 'moved 1 files to target'
+! exists sample.png
+exists target/2026-02-26/sample.png
+! exists target/2026-02-26/sample.txt
+exists sample.txt
+-- sample.png --
+-- sample.txt --

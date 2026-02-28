@@ -33,7 +33,7 @@ func TestCmdFromArgs(t *testing.T) {
 		{
 			desc: "With Source and Target Returns Move",
 			args: []string{"cleaner", "source", "target"},
-			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: ""},
 		},
 		{
 			desc: "With Ext Flag Returns Move with Ext",
@@ -199,13 +199,15 @@ func TestFilesByExt_CorrectlyListsFilesMatchingGivenExt(t *testing.T) {
 		"subfolder/subfolder.png": {},
 		"subfolder2/another.go":   {},
 		"subfolder2/file.png":     {},
+		"subfolder1/nested/file2.png": {},
 	}
 	want := []string{
-		"file.png",
-		"subfolder/subfolder.png",
-		"subfolder2/file.png",
+		"./file.png",
+		"./subfolder/subfolder.png",
+		"./subfolder1/nested/file2.png",
+		"./subfolder2/file.png",
 	}
-	got, err := cleaner.ListFilesByExt(fsys, ".png")
+	got, err := cleaner.ListFilesByExt(".", fsys, ".png",)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +221,7 @@ func TestFilesByExt_ErrorsWhenExtNotGiven(t *testing.T) {
 	fsys := fstest.MapFS{
 		"file.png": {},
 	}
-	_, err := cleaner.ListFilesByExt(fsys, "")
+	_, err := cleaner.ListFilesByExt("/", fsys, "")
 	if err == nil {
 		t.Fatal("want error given empty ext by got none")
 	}

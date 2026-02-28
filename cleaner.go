@@ -21,10 +21,11 @@ type Cmd struct {
 	Source    string
 	Target    string
 	Extension string
+	MatchedFiles []string
 }
 
 func NewCmd() *Cmd {
-	return &Cmd{Extension: "png"}
+	return &Cmd{Extension: ""}
 }
 
 func CmdFromArgs(args []string) Cmd {
@@ -32,7 +33,7 @@ func CmdFromArgs(args []string) Cmd {
 		return Cmd{Operation: CmdUsage}
 	}
 	fSet := flag.NewFlagSet("cleaner", flag.ContinueOnError)
-	ext := fSet.String("ext", "png", "the file extension to match")
+	ext := fSet.String("ext", "", "the file extension to match")
 	err := fSet.Parse(args[1:]) // skip program name so flags like -ext are parsed
 	if err != nil {
 		return Cmd{Operation: CmdUsage}
@@ -87,7 +88,8 @@ func MoveFiles(file, target string) error {
 
 var date = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})`)
 
-// DateSubfolder returns the date from filename.
+// DateSubfolder returns the date from filename if the filename contains a date.
+// else it gets the date from the file metadata's last modified time
 func DateSubfolder(filename string) (string, error) {
 	matches := date.FindStringSubmatch(filename)
 
@@ -105,13 +107,17 @@ func FileModeDateFromMetaData(path string) (string, error) {
 	return info.ModTime().Format("2006-01-02"), nil
 }
 
-func ListFilesByExt(fsys fs.FS, ext string) (paths []string, err error) {
+func ListFilesByExt(root string, fsys fs.FS, ext string, ) (paths []string, err error) {
 	if ext == "" {
 		return nil, errors.New("extension cannot be empty")
 	}
+	matchExt := ext
+	if ext[0] != '.' {
+		matchExt = "." + ext
+	}
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ext {
-			paths = append(paths, p)
+		if filepath.Ext(p) == matchExt {
+			paths = append(paths, root+"/"+p)
 		}
 		return nil
 	})
@@ -124,31 +130,43 @@ func Main() int {
 		fmt.Println(usage)
 		return 0
 	}
+	if cmd.Extension != "" {
+		files, err := ListFilesByExt(cmd.Source, os.DirFS(cmd.Source), cmd.Extension)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if len(files) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		cmd.MatchedFiles = files
+	} else {
+		var screenshots []string
+		screenshots, err := ListScreenshots(cmd.Source)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if len(screenshots) == 0 {
+			fmt.Println("no files to move")
+			return 0
+		}
+		cmd.MatchedFiles = screenshots
+	}
 
-	screenshots, err := ListScreenshots(cmd.Source)
+	_, err := os.Stat(cmd.Target)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-
-	if len(screenshots) == 0 {
-		fmt.Println("no files to move")
-		return 0
-	}
-
-	_, err = os.Stat(cmd.Target)
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	for _, screenshot := range screenshots {
-		err := MoveFiles(screenshot, cmd.Target)
+	for _, f := range cmd.MatchedFiles {
+		err := MoveFiles(f, cmd.Target)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 	}
-	fmt.Printf("moved %d files to %s\n", len(screenshots), cmd.Target)
+	fmt.Printf("moved %d files to %s\n", len(cmd.MatchedFiles), cmd.Target)
 	return 0
 }
