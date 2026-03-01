@@ -1,4 +1,5 @@
 # Test: Moving screenshots when the target directory is read-only
+[windows] skip 'chmod-based permission test is unix-only'
 mkdir target
 chmod 500 target
 

@@ -22,6 +22,7 @@ type Cmd struct {
 	Target    string
 	Extension string
 	MatchedFiles []string
+	DryRun bool
 }
 
 func NewCmd() *Cmd {
@@ -34,6 +35,7 @@ func CmdFromArgs(args []string) Cmd {
 	}
 	fSet := flag.NewFlagSet("cleaner", flag.ContinueOnError)
 	ext := fSet.String("ext", "", "the file extension to match")
+	dryrun := fSet.Bool("dry-run", false, "enable dry-run mode")
 	err := fSet.Parse(args[1:]) // skip program name so flags like -ext are parsed
 	if err != nil {
 		return Cmd{Operation: CmdUsage}
@@ -42,7 +44,7 @@ func CmdFromArgs(args []string) Cmd {
 	if len(pos) < 2 {
 		return Cmd{Operation: CmdUsage}
 	}
-	return Cmd{Operation: CmdMove, Source: pos[0], Target: pos[1], Extension: *ext}
+	return Cmd{Operation: CmdMove, Source: pos[0], Target: pos[1], Extension: *ext, DryRun: *dryrun}
 }
 
 const usage = `usage: cleaner <SOURCE> <TARGET>`
@@ -159,6 +161,13 @@ func Main() int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
+	}
+	if cmd.DryRun {
+		fmt.Printf("would have moved the following files from %s to %s\n", cmd.Source, cmd.Target)
+		for _, f := range cmd.MatchedFiles {
+			fmt.Println(f)
+		}
+		return 0
 	}
 	for _, f := range cmd.MatchedFiles {
 		err := MoveFiles(f, cmd.Target)
