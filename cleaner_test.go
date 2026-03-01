@@ -41,9 +41,14 @@ func TestCmdFromArgs(t *testing.T) {
 			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png"},
 		},
 		{
-			desc: "With DryRun Returns Cmd with DryRun",
+			desc: "With DryRun and Ext Flag Returns Cmd with DryRun",
 			args: []string{"cleaner", "-ext", "png", "--dry-run", "source", "target"},
 			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "png", DryRun: true},
+		},
+		{	
+			desc: "With DryRun and No Ext Flag Returns Cmd with DryRun",
+			args: []string{"cleaner", "--dry-run=true", "source", "target"},
+			want: cleaner.Cmd{Operation: cleaner.CmdMove, Source: "source", Target: "target", Extension: "", DryRun: true},
 		},
 	}
 	for _, tC := range testCases {
