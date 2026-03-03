@@ -1,0 +1,3 @@
+exec cleaner -ext png --dry-run . target
+stdout 'would have moved the following files from \. to target\n\./sample\.png'
+-- sample.png --
