@@ -156,18 +156,17 @@ func Main() int {
 		}
 		cmd.MatchedFiles = screenshots
 	}
-
-	_, err := os.Stat(cmd.Target)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
 	if cmd.DryRun {
 		fmt.Printf("would have moved the following files from %s to %s\n", cmd.Source, cmd.Target)
 		for _, f := range cmd.MatchedFiles {
 			fmt.Println(f)
 		}
 		return 0
+	}
+	_, err := os.Stat(cmd.Target)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
 	for _, f := range cmd.MatchedFiles {
 		err := MoveFiles(f, cmd.Target)
