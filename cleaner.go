@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -126,55 +127,56 @@ func ListFilesByExt(root string, fsys fs.FS, ext string, ) (paths []string, err 
 	return paths, nil
 }
 
-func Main() int {
-	cmd := CmdFromArgs(os.Args)
+func printDryRun(out io.Writer, cmd Cmd) {
+	fmt.Fprintf(out, "would have moved the following files from %s to %s\n", cmd.Source, cmd.Target)
+	for _, f := range cmd.MatchedFiles {
+		fmt.Fprintln(out, f)
+	}
+}
+
+func matchedFilesForCmd(cmd Cmd) ([]string, error) {
+	if cmd.Extension == "" {
+		return ListScreenshots(cmd.Source)
+	}
+	return ListFilesByExt(cmd.Source, os.DirFS(cmd.Source), cmd.Extension)
+}
+
+func run(args []string, out io.Writer, errOut io.Writer) int {
+	cmd := CmdFromArgs(args)
 	if cmd.Operation == CmdUsage {
-		fmt.Println(usage)
+		fmt.Fprintln(out, usage)
 		return 0
 	}
-	if cmd.Extension != "" {
-		files, err := ListFilesByExt(cmd.Source, os.DirFS(cmd.Source), cmd.Extension)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
-		if len(files) == 0 {
-			fmt.Println("no files to move")
-			return 0
-		}
-		cmd.MatchedFiles = files
-	} else {
-		var screenshots []string
-		screenshots, err := ListScreenshots(cmd.Source)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
-		if len(screenshots) == 0 {
-			fmt.Println("no files to move")
-			return 0
-		}
-		cmd.MatchedFiles = screenshots
-	}
-	if cmd.DryRun {
-		fmt.Printf("would have moved the following files from %s to %s\n", cmd.Source, cmd.Target)
-		for _, f := range cmd.MatchedFiles {
-			fmt.Println(f)
-		}
-		return 0
-	}
-	_, err := os.Stat(cmd.Target)
+	files, err := matchedFilesForCmd(cmd)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(errOut, err)
+		return 1
+	}
+	if len(files) == 0 {
+		fmt.Fprintln(out, "no files to move")
+		return 0
+	}
+	cmd.MatchedFiles = files
+	if cmd.DryRun {
+		printDryRun(out, cmd)
+		return 0
+	}
+	_, err = os.Stat(cmd.Target)
+	if err != nil {
+		fmt.Fprintln(errOut, err)
 		return 1
 	}
 	for _, f := range cmd.MatchedFiles {
 		err := MoveFiles(f, cmd.Target)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(errOut, err)
 			return 1
 		}
 	}
-	fmt.Printf("moved %d files to %s\n", len(cmd.MatchedFiles), cmd.Target)
+	fmt.Fprintf(out, "moved %d files to %s\n", len(cmd.MatchedFiles), cmd.Target)
 	return 0
+}
+
+func Main() int {
+	return run(os.Args, os.Stdout, os.Stderr)
 }
